@@ -1,0 +1,112 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output = "../src/generate/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id           String      @id @default(uuid())
+  name         String
+  email        String      @unique
+  passwordHash String
+  role         Role        @default(CUSTOMER)
+  phone        String?
+
+  sessions     Session[]
+  bookings     Booking[]
+  barberShops  BarberShop[] // se for ADMIN, pode ter barbearias
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+enum Role {
+  ADMIN     // dono da barbearia
+  CUSTOMER  // cliente
+}
+
+// ─── SESSÕES ─────────────────────────────────────────
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+// ─── BARBEARIA ────────────────────────────────────────
+
+model BarberShop {
+  id        String    @id @default(uuid())
+  name      String
+  slug      String    @unique
+  address   String
+  phone     String?
+  imageUrl  String?
+
+  ownerId   String
+  owner     User      @relation(fields: [ownerId], references: [id])
+
+  services  Service[]
+  bookings  Booking[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// ─── SERVIÇOS ─────────────────────────────────────────
+
+model Service {
+  id           String     @id @default(uuid())
+  name         String
+  description  String?
+  price        Float
+  duration     Int        // em minutos
+  imageUrl     String?
+
+  barberShopId String
+  barberShop   BarberShop @relation(fields: [barberShopId], references: [id], onDelete: Cascade)
+
+  bookings     Booking[]
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+// ─── AGENDAMENTOS ─────────────────────────────────────
+
+model Booking {
+  id           String        @id @default(uuid())
+  date         DateTime
+  status       BookingStatus @default(PENDING)
+
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  serviceId    String
+  service      Service       @relation(fields: [serviceId], references: [id])
+
+  barberShopId String
+  barberShop   BarberShop    @relation(fields: [barberShopId], references: [id])
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+enum BookingStatus {
+  PENDING    // aguardando confirmação
+  CONFIRMED  // confirmado
+  CANCELLED  // cancelado
+  COMPLETED  // concluído
+}
