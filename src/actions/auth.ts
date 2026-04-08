@@ -1,10 +1,10 @@
 "use server"
 
 import bcrypt from "bcrypt"
-import {prisma} from "@/lib/prisma"
+import {prisma} from "@/src/lib/prisma"
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
-import { createSession, deleteSession } from "@/lib/session"
+import { createSession, deleteSession } from "@/src/lib/session"
 
 
 export async function registerAction(formData: FormData) {
